@@ -6,7 +6,7 @@ var environments = {
         FIREBASE_PROJECT_ID: 'ecological-footprint',
         FIREBASE_STORAGE_BUCKET: 'ecological-footprint.appspot.com',
         FIREBASE_MESSAGING_SENDER_ID: '29979249962',
-        GOOGLE_CLOUD_VISION_API_KEY: 'caa02c323f03216eff844e3e14d8b303fe6f5631'
+        GOOGLE_CLOUD_VISION_API_KEY: 'AIzaSyC2cQy9UuU0e6WU_oAM8IqDGZTkkTBQHoc'
     },
     production: {
         // Warning: This file still gets included in your native binary and is not a secure way to store secrets if you build for the app stores. Details: https://github.com/expo/expo/issues/83

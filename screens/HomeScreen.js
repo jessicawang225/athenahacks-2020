@@ -58,10 +58,6 @@ export default class App extends React.Component {
             </View>
 
             <View style={styles.helpContainer}>
-              <Button
-                  onPress={this._pickImage}
-                  title="Pick an image from camera roll"
-              />
 
               <Button onPress={this._takePhoto} title="Take a photo" />
               {this.state.googleResponse && (
@@ -149,17 +145,6 @@ export default class App extends React.Component {
               style={{ paddingVertical: 10, paddingHorizontal: 10 }}
           />
 
-          <Text>Raw JSON:</Text>
-
-          {googleResponse && (
-              <Text
-                  onPress={this._copyToClipboard}
-                  onLongPress={this._share}
-                  style={{ paddingVertical: 10, paddingHorizontal: 10 }}
-              >
-                JSON.stringify(googleResponse.responses)}
-              </Text>
-          )}
         </View>
     );
   };
@@ -192,15 +177,6 @@ export default class App extends React.Component {
     this._handleImagePicked(pickerResult);
   };
 
-  _pickImage = async () => {
-    let pickerResult = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [4, 3]
-    });
-
-    this._handleImagePicked(pickerResult);
-  };
-
   _handleImagePicked = async pickerResult => {
     try {
       this.setState({ uploading: true });
@@ -225,14 +201,10 @@ export default class App extends React.Component {
           {
             features: [
               { type: 'LABEL_DETECTION', maxResults: 10 },
-              { type: 'LANDMARK_DETECTION', maxResults: 5 },
-              { type: 'FACE_DETECTION', maxResults: 5 },
               { type: 'LOGO_DETECTION', maxResults: 5 },
               { type: 'TEXT_DETECTION', maxResults: 5 },
               { type: 'DOCUMENT_TEXT_DETECTION', maxResults: 5 },
-              { type: 'SAFE_SEARCH_DETECTION', maxResults: 5 },
               { type: 'IMAGE_PROPERTIES', maxResults: 5 },
-              { type: 'CROP_HINTS', maxResults: 5 },
               { type: 'WEB_DETECTION', maxResults: 5 }
             ],
             image: {
@@ -268,24 +240,32 @@ export default class App extends React.Component {
 }
 
 async function uploadImageAsync(uri) {
+  // Why are we using XMLHttpRequest? See:
+  // https://github.com/expo/expo/issues/2402#issuecomment-443726662
+  const blob = await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = function() {
+      resolve(xhr.response);
+    };
+    xhr.onerror = function(e) {
+      console.log(e);
+      reject(new TypeError('Network request failed'));
+    };
+    xhr.responseType = 'blob';
+    xhr.open('GET', uri, true);
+    xhr.send(null);
+  });
 
-  console.log(uri);
-
-  const response = await fetch(uri);
-  const blob = await response.blob();
   const ref = firebase
       .storage()
       .ref()
       .child(uuid.v4());
+  const snapshot = await ref.put(blob);
 
-  await ref.put(blob)
-      .then(snapshot => {
-        return snapshot.ref.getDownloadURL();
-      })
-      .then(downloadURL => {
-        console.log(`Successfully uploaded file and got download link - ${downloadURL}`);
-        return downloadURL;
-      });
+  // We're done with the blob, close and release it
+  blob.close();
+
+  return await snapshot.ref.getDownloadURL();
 }
 
 const styles = StyleSheet.create({
